@@ -1,0 +1,114 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              String              @id @default(uuid())
+  name            String
+  email           String              @unique
+  password        String
+  joinedAt        DateTime            @default(now())
+  role            Role                @default(USER)
+  coins           Int                 @default(0)
+  package         Package?            @relation(fields: [packageId], references: [id])
+  packageId       String?
+  webinars        WebinarAttendance[]
+  referredBy      Executive?          @relation(fields: [executiveRefode], references: [referralCode], name: "ExecutiveToUsers")
+  executiveRefode String?
+  transactions    CoinTransaction[]
+  referralsMade   Referral[]          @relation("UserToReferrals")
+  userPackages    UserPackage[]
+  isBanned        Boolean             @default(false)
+}
+
+model Executive {
+  id            String     @id @default(uuid())
+  name          String
+  email         String     @unique
+  password      String
+  joinedAt      DateTime   @default(now())
+  referredUsers User[]     @relation(name: "ExecutiveToUsers")
+  referrals     Referral[] @relation(name: "ExecutiveToReferrals")
+  isBanned      Boolean    @default(false)
+  referralCode  String     @unique
+}
+
+model Package {
+  id           String        @id @default(uuid())
+  name         String
+  priceInCoins Int
+  validityDays Int
+  users        User[]
+  webinars     Webinar[]
+  userPackages UserPackage[]
+}
+
+model Webinar {
+  id          String              @id @default(uuid())
+  title       String
+  date        DateTime
+  zoomLink    String
+  thumbnail   String
+  package     Package             @relation(fields: [packageId], references: [id])
+  packageId   String
+  description String?
+  attendees   WebinarAttendance[]
+}
+
+model UserPackage {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  package     Package  @relation(fields: [packageId], references: [id])
+  packageId   String
+  purchasedAt DateTime @default(now())
+  validUntil  DateTime
+  isActive    Boolean  @default(true)
+}
+
+model WebinarAttendance {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  webinar    Webinar  @relation(fields: [webinarId], references: [id])
+  webinarId  String
+  attendedAt DateTime @default(now())
+}
+
+model Referral {
+  id              String    @id @default(uuid())
+  executive       Executive @relation(fields: [executiveRefode], references: [referralCode], name: "ExecutiveToReferrals")
+  executiveRefode String
+  referredUser    User      @relation(fields: [userId], references: [id], name: "UserToReferrals")
+  userId          String
+  referredAt      DateTime  @default(now())
+}
+
+model CoinTransaction {
+  id        String          @id @default(uuid())
+  user      User            @relation(fields: [userId], references: [id])
+  userId    String
+  amount    Int
+  type      TransactionType
+  createdAt DateTime        @default(now())
+}
+
+enum Role {
+  USER
+  EXECUTIVE
+  ADMIN
+}
+
+enum TransactionType {
+  PURCHASE
+  SPEND
+}
