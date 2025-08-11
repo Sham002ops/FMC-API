@@ -1,10 +1,11 @@
 import express from 'express';
 import prisma from '../prismaClient'; // adjust path if necessary
+import { adminMiddleware } from '../Middlewares/adminMiddleware';
 
 const router = express.Router();
 
 // Create Webinar
-router.post('/create', async (req, res) => {
+router.post('/create', adminMiddleware, async (req, res) => {
   const { id, title, date, zoomLink, thumbnail, packageId } = req.body;
 
   try {

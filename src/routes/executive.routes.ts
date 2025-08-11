@@ -2,13 +2,14 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import prisma from '../prismaClient'; // adjust path as needed
 import { nanoid } from 'nanoid';
+import { adminMiddleware } from '../Middlewares/adminMiddleware';
 
 // Generate referralCode of 6 characters
 const referralCode = nanoid(6);
 const router = express.Router();
 
 // Register Executive
-router.post('/register-executive', async (req, res) => {
+router.post('/register-executive', adminMiddleware, async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
@@ -30,13 +31,14 @@ router.post('/register-executive', async (req, res) => {
 
     // Hash password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
+    const referralCode = await nanoid(6);
 
     const newExecutive = await prisma.executive.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        referralCode,
+        referralCode : referralCode,
       },
     });
 
@@ -49,7 +51,7 @@ router.post('/register-executive', async (req, res) => {
 });
 
 // Get list of executives (without password)
-router.get('/get-executives', async (_req, res) => {
+router.get('/get-executives', adminMiddleware, async (_req, res) => {
   try {
     const executives = await prisma.executive.findMany({
       select: {

@@ -4,13 +4,14 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../prismaClient'; // your prisma client singleton import
 
+
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export const registerUser = async (req: Request, res: Response) => {
-  const { name, email, password, executiveRefode } = req.body;
+  const { name, email, password, executiveRefode, role } = req.body;
 
-  if (!name || !email || !password || !executiveRefode) {
-    res.status(400).json({ error: 'Name, email, password, and executiveRefode are required.' });
+  if (!name || !email || !password  || !role) {
+    res.status(400).json({ error: 'Name, email and password are required.' });
     return;
   }
 
@@ -26,6 +27,14 @@ export const registerUser = async (req: Request, res: Response) => {
       return;
     }
 
+    if (role === 'USER') {
+        if (!executiveRefode) {
+          return res.status(400).json({ error: 'executiveRefode is required for regular users.' });
+        }
+        // if required add other checks
+      }
+
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -36,9 +45,9 @@ export const registerUser = async (req: Request, res: Response) => {
         email,
         password: hashedPassword,
         executiveRefode,
-        packageId: 'a409dd91-d41e-4484-a636-98158aa0942d', // default package id (make sure this exists in DB)
-        role: 'USER',
-        coins: 300,
+        packageId: role === 'USER' ? 'a409dd91-d41e-4484-a636-98158aa0942d' : null, // default package for users only
+        role: role,
+        coins: role === 'ADMIN' ? 9999999 : 5000,
       },
     });
 
@@ -62,6 +71,7 @@ export const registerUser = async (req: Request, res: Response) => {
         role: newUser.role,
       },
       token,
+      secret: JWT_SECRET,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Registration failed' });
@@ -103,6 +113,7 @@ export const login = async (req: Request, res: Response) => {
     const token = jwt.sign(
       {
         userId: user.id,
+        name: user.name,
         email: user.email,
         role: user.role,
       },
@@ -122,20 +133,25 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const verifyToken = (req: Request, res: Response) => {
-  const token = req.cookies['access-token'] || req.headers.authorization?.split(' ')[1];
+  const token = (req.cookies && req.cookies['access-token']) || 
+                (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') 
+                  ? req.headers.authorization.split(' ')[1]
+                  : undefined);
+
   if (!token) {
-    res.status(401).json({ error: 'No token found' });
-    return;
+    return res.status(401).json({ error: 'No token found' });
   }
 //@ts-ignore
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
-      res.status(403).json({ error: 'Invalid or expired token' });
-      return;
+      return res.status(403).json({ error: 'Invalid or expired token' });
     }
     res.json({ user: decoded });
+    console.log("decoded at verify token: ", decoded);
+    
   });
 };
+
 
 export const logout = (req: Request, res: Response) => {
   res.clearCookie('access-token');

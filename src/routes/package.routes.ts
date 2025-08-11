@@ -1,10 +1,11 @@
 import express from 'express';
 import prisma from '../prismaClient'; // Adjust path as needed
+import { adminMiddleware } from '../Middlewares/adminMiddleware';
 
 const router = express.Router();
 
 // Create Package
-router.post('/create-package', async (req, res) => {
+router.post('/create-package', adminMiddleware, async (req, res) => {
   const { name, priceInCoins, validityDays } = req.body;
 
   try {
