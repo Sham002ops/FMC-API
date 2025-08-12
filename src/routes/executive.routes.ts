@@ -3,6 +3,10 @@ import bcrypt from 'bcrypt';
 import prisma from '../prismaClient'; // adjust path as needed
 import { nanoid } from 'nanoid';
 import { adminMiddleware } from '../Middlewares/adminMiddleware';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
 
 // Generate referralCode of 6 characters
 const referralCode = nanoid(6);
@@ -47,6 +51,57 @@ router.post('/register-executive', adminMiddleware, async (req, res) => {
   } catch (err: any) {
     console.error('Error creating executive:', err);
     res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+
+router.post('/executivelogin' , async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // Fetch user by email
+    const executive = await prisma.executive.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        password: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    if (!executive) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
+    }
+
+    // Verify password
+    const passwordMatch = await bcrypt.compare(password, executive.password);
+    if (!passwordMatch) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        executiveId: executive.id,
+        name: executive.name,
+        email: executive.email,
+        role: 'EXECUTIVE',
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Optionally set HttpOnly cookies or send token in response
+    res.cookie('access-token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days
+
+    // Exclude password from response
+    const { password: _, ...userWithoutPassword } = executive;
+    res.status(200).json({ user: userWithoutPassword, token });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Login failed' });
   }
 });
 
