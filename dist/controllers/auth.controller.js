@@ -9,9 +9,9 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prismaClient_1 = __importDefault(require("../prismaClient")); // your prisma client singleton import
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const registerUser = async (req, res) => {
-    const { name, email, password, executiveId } = req.body;
-    if (!name || !email || !password || !executiveId) {
-        res.status(400).json({ error: 'Name, email, password, and executiveId are required.' });
+    const { name, email, password, executiveRefode, role } = req.body;
+    if (!name || !email || !password || !role) {
+        res.status(400).json({ error: 'Name, email and password are required.' });
         return;
     }
     try {
@@ -24,6 +24,12 @@ const registerUser = async (req, res) => {
             res.status(409).json({ error: 'User already exists with this email.' });
             return;
         }
+        if (role === 'USER') {
+            if (!executiveRefode) {
+                return res.status(400).json({ error: 'executiveRefode is required for regular users.' });
+            }
+            // if required add other checks
+        }
         // Hash password
         const hashedPassword = await bcrypt_1.default.hash(password, 10);
         // Insert new user (assign default packageId as needed)
@@ -32,10 +38,10 @@ const registerUser = async (req, res) => {
                 name,
                 email,
                 password: hashedPassword,
-                executiveId,
-                packageId: '03', // default package id (make sure this exists in DB)
-                role: 'USER',
-                coins: 300,
+                executiveRefode,
+                packageId: role === 'USER' ? 'a409dd91-d41e-4484-a636-98158aa0942d' : null, // default package for users only
+                role: role,
+                coins: role === 'ADMIN' ? 9999999 : 5000,
             },
         });
         // Generate JWT token
@@ -53,6 +59,7 @@ const registerUser = async (req, res) => {
                 role: newUser.role,
             },
             token,
+            secret: JWT_SECRET,
         });
     }
     catch (err) {
@@ -71,7 +78,7 @@ const login = async (req, res) => {
                 password: true,
                 email: true,
                 name: true,
-                executiveId: true,
+                executiveRefode: true,
                 packageId: true,
                 role: true,
                 coins: true,
@@ -90,6 +97,7 @@ const login = async (req, res) => {
         // Generate JWT token
         const token = jsonwebtoken_1.default.sign({
             userId: user.id,
+            name: user.name,
             email: user.email,
             role: user.role,
         }, JWT_SECRET, { expiresIn: '7d' });
@@ -105,18 +113,20 @@ const login = async (req, res) => {
 };
 exports.login = login;
 const verifyToken = (req, res) => {
-    const token = req.cookies['access-token'] || req.headers.authorization?.split(' ')[1];
+    const token = (req.cookies && req.cookies['access-token']) ||
+        (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')
+            ? req.headers.authorization.split(' ')[1]
+            : undefined);
     if (!token) {
-        res.status(401).json({ error: 'No token found' });
-        return;
+        return res.status(401).json({ error: 'No token found' });
     }
     //@ts-ignore
     jsonwebtoken_1.default.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) {
-            res.status(403).json({ error: 'Invalid or expired token' });
-            return;
+            return res.status(403).json({ error: 'Invalid or expired token' });
         }
         res.json({ user: decoded });
+        console.log("decoded at verify token: ", decoded);
     });
 };
 exports.verifyToken = verifyToken;

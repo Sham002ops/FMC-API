@@ -5,9 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const prismaClient_1 = __importDefault(require("../prismaClient")); // Adjust path as needed
+const adminMiddleware_1 = require("../Middlewares/adminMiddleware");
 const router = express_1.default.Router();
 // Create Package
-router.post('/create-package', async (req, res) => {
+router.post('/create-package', adminMiddleware_1.adminMiddleware, async (req, res) => {
     const { name, priceInCoins, validityDays } = req.body;
     try {
         const newPackage = await prismaClient_1.default.package.create({
