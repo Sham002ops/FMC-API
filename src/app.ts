@@ -7,18 +7,38 @@ import cookieParser from 'cookie-parser';
 dotenv.config();
 
 const app = express();
+
+// Allowed origins
+const allowedOrigins = [
+  "http://localhost:5173", // Local dev
+  "http://localhost:8080", // Optional if you test another port
+  "https://finite-marshall-club1.vercel.app" // Your frontend on Vercel
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("CORS policy: Not allowed by server"));
+    }
+  },
+  credentials: true
+}));
+
+// Handle preflight requests for all routes
+app.options("*", cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+
+
 app.use(express.json());
 app.use(cookieParser());
 
-// CORS
-app.use(cors({
-  origin: process.env.FRONTEND_URL?.split(",") || [
-    
-    "http://localhost:8080",
-    "finite-marshall-club1.vercel.app"
-  ],
-  credentials: true
-}));
+
 
 // Routes
 import authRoutes from './routes/auth.routes';
