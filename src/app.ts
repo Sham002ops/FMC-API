@@ -12,7 +12,11 @@ app.use(cookieParser());
 
 // CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+  origin: process.env.FRONTEND_URL?.split(",") || [
+    
+    "http://localhost:8080",
+    "finite-marshall-club1.vercel.app"
+  ],
   credentials: true
 }));
 
