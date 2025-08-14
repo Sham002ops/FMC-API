@@ -10,8 +10,8 @@ const app = express();
 
 // Allowed origins
 const allowedOrigins = [
-  "http://localhost:5173", // Local dev
-  "http://localhost:8080", // Optional if you test another port
+  // "http://localhost:5173", // Local dev
+  // "http://localhost:8080", // Optional if you test another port
   "https://finite-marshall-club1.vercel.app" // Your frontend on Vercel
 ];
 
@@ -28,12 +28,18 @@ app.use(cors({
   credentials: true
 }));
 
-// Handle preflight requests for all routes
-app.options("*", cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
-
+// Explicit OPTIONS handling for all routes
+app.options("*", (req, res) => {
+  const origin = req.headers.origin;
+  //@ts-ignore
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.sendStatus(200);
+});
 
 app.use(express.json());
 app.use(cookieParser());
