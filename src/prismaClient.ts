@@ -1,4 +1,4 @@
-import { PrismaClient } from './generated/prisma'; // adjust path if needed
+import { PrismaClient } from '../node_modules/.prisma/client'; // adjust path if needed
 
 const prisma = new PrismaClient();
 
