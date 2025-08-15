@@ -65,6 +65,16 @@ import packageRoutes from './routes/package.routes';
 import webinarRoutes from './routes/webinar.routes';
 import adminRoutes from './routes/admin.routes';
 
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    message: "Backend is running ✅",
+    timestamp: new Date().toISOString()
+  });
+});
+
+
 app.use('/auth', authRoutes);
 app.use('/executive', executiveRoutes);
 app.use('/package', packageRoutes);
