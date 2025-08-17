@@ -46,6 +46,7 @@ model Package {
   name         String
   priceInCoins Int
   validityDays Int
+  features     String[]
   users        User[]
   webinars     Webinar[]
   userPackages UserPackage[]

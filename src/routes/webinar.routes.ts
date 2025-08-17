@@ -6,9 +6,22 @@ const router = express.Router();
 
 // Create Webinar
 router.post('/create', adminMiddleware, async (req, res) => {
-  const { id, title, date, zoomLink, thumbnail, packageId } = req.body;
+  const { id, title, date, zoomLink, thumbnail, packageName } = req.body;
+
 
   try {
+    const foundPackage = await prisma.package.findFirst({
+       where: { name: packageName }
+     });
+     
+   
+    console.log("found package: ", foundPackage);
+    
+    
+    if (!foundPackage) {
+       res.status(400).json({ error: 'Package not found' })
+       return;
+    }
     const newWebinar = await prisma.webinar.create({
       data: {
         id,
@@ -16,7 +29,7 @@ router.post('/create', adminMiddleware, async (req, res) => {
         date: new Date(date), // Ensure date is a Date object
         zoomLink,
         thumbnail,
-        packageId,
+        packageId : foundPackage?.id,
       },
     });
     res.status(201).json(newWebinar);

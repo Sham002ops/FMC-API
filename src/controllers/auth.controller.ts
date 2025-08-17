@@ -134,7 +134,7 @@ export const login = async (req: Request, res: Response) => {
 
 export const verifyToken = (req: Request, res: Response) => {
   const token = (req.cookies && req.cookies['access-token']) || 
-                (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') 
+                (req.headers.authorization && req.headers.authorization.startsWith('Bearer') 
                   ? req.headers.authorization.split(' ')[1]
                   : undefined);
 

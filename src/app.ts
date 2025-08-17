@@ -11,7 +11,10 @@ const app = express();
 // Allowed origins
 app.use(
   cors({
-    origin: "https://finite-marshall-club1.vercel.app",
+    origin: [
+    "https://finite-marshall-club1.vercel.app",
+    "http://localhost:8080"
+  ],
     credentials: true, // if you send cookies or auth headers
   })
 );
