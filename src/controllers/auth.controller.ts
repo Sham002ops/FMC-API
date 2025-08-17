@@ -116,6 +116,7 @@ export const login = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        coins: user.coins
       },
       JWT_SECRET,
       { expiresIn: '7d' }
