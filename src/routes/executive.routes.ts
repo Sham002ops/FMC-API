@@ -5,7 +5,8 @@ import { nanoid } from 'nanoid';
 import { adminMiddleware } from '../Middlewares/adminMiddleware';
 import jwt from 'jsonwebtoken';
 import { log } from 'console';
-import { executivelogin, getExecutives, registerExecutive, registerUserByExecutive } from '../controllers/executive.controlers';
+import { executivelogin, getExecutives, getRefUsers, registerExecutive, registerUserByExecutive } from '../controllers/executive.controlers';
+import { executiveMiddleware } from '../Middlewares/executiveMiddleware';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -21,6 +22,7 @@ router.post('/executivelogin' , executivelogin)
 
 // Get list of executives (without password)
 router.get('/get-executives', adminMiddleware, getExecutives)
+router.get('/get-ref-users', executiveMiddleware, getRefUsers)
 router.post('/register-user', registerUserByExecutive)
 
 export default router;

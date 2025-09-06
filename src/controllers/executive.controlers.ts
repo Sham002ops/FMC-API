@@ -67,6 +67,7 @@ export const executivelogin = async (req:Request, res:Response) => {
         password: true,
         email: true,
         name: true,
+        referralCode: true
       },
     });
 
@@ -81,7 +82,8 @@ export const executivelogin = async (req:Request, res:Response) => {
       res.status(401).json({ error: 'Invalid email or password' });
       return;
     }
-
+    console.log(" exe ref code : " , executive.referralCode);
+    
     // Generate JWT token
     const token = jwt.sign(
       {
@@ -89,6 +91,7 @@ export const executivelogin = async (req:Request, res:Response) => {
         name: executive.name,
         email: executive.email,
         role: 'EXECUTIVE',
+        referralCode: executive.referralCode
       },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -127,6 +130,38 @@ export const getExecutives =  async (req:Request, res:Response) => {
   }
 };
 
+export const getRefUsers = async ( req: Request, res: Response) => {
+
+   // @ts-ignore
+    const referralCode = req.referralCode;
+    console.log("Referral Code:", referralCode);
+  
+     try {
+          // Fetch user by email
+          
+          const AllRefUsers = await prisma.user.findMany({
+            where: { executiveRefode : referralCode },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              executiveRefode: true,
+              packageId: true,
+              role: true,
+              coins: true,
+            },
+          });
+          console.log("All Ref Users : " , AllRefUsers);
+          res.status(200).json({ AllRefUsers: AllRefUsers});
+
+
+          if (!AllRefUsers) {
+            res.status(401).json({ error: 'faield to get users' });
+            return;
+          }
+          } catch (err: any) {
+              res.status(500).json({ error: err.message || 'Unable to get all Users' });
+      }}
 
 
 export const registerUserByExecutive = async (req: Request, res: Response) => {
